@@ -4,7 +4,7 @@
 
 
 #define PIN_PLUVIOMETRO 2 
-#define MEDIDA_BASCULA 7.54 // 7.54ml each time it's activated, 9cm diameter, 4.5cm radius, 63,585 cm2
+#define MEDIDA_BASCULA 7.54 // 7.54ml each time it's activated, 9cm diameter, 4.5cm radius, 63,585 cm2 , 0,118521 L/m2
 #define INTERVALO_LEITURA 1000 // 1000 milisegundos que são 1 segundo
 #define RAIO_PLUVIOMETRO 4.5 
 
@@ -24,9 +24,7 @@ bool reedSwitchAtivado = false;
 unsigned long ultimoIntervalo = 0; 
 
 void loop() {
-  float areaPluviometroM2 = ((RAIO_PLUVIOMETRO * 3.1415) * 10*10*10*10);
-  float emM3 = MEDIDA_BASCULA/10*10*10*10;
-
+  
   int valorDigital = digitalRead(PIN_PLUVIOMETRO); // Ele sempre será 1, e só será 0 quando o imã se aproximar no Reed Switch
   modificarContagem(valorDigital);
   
@@ -67,6 +65,13 @@ float contarMlPorMinuto(){
   return mediaTotal;
 }
 
+float medidaLporM2(){
+  float areaPluviometroM2 = ((RAIO_PLUVIOMETRO * 3.1415) / 10*10*10*10);
+  float medidaBasculaemM3 = MEDIDA_BASCULA/10*10*10*10;
+  float quantidadeDeAguaPorM2 = medidaBasculaemM3/areaPluviometroM2;  
+  return quantidadeDeAguaPorM2;
+}
+
 void pluviometroSerial(int valorDigital, float mediaContagemMin) {
   double mlTotais = contagemGeral * MEDIDA_BASCULA;
   double mlMedioPorMin = mediaContagemMin * MEDIDA_BASCULA;
@@ -77,6 +82,8 @@ void pluviometroSerial(int valorDigital, float mediaContagemMin) {
   Serial.print(mlTotais);
   Serial.print(" | ml Por Min: ");
   Serial.print(mlMedioPorMin);
+  Serial.print(" | L/m2 Totais: ");
+  Serial.print(medidaLporM2());
   Serial.print(" | ContagemSec ");
   Serial.println(contagemSec);
 }
