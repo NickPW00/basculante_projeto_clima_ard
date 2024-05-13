@@ -1,7 +1,4 @@
-/* 
-10/05/24: Atualmente, o codigo tem todas as informações processadas para a melhora da mesma. 
- */
-
+// 10/05/24: Atualmente, o codigo tem todas as informações processadas para a melhora da mesma. 
 
 #define PIN_PLUVIOMETRO 2 
 #define MEDIDA_BASCULA 7.54 // 7.54ml each time it's activated, 9cm diameter, 4.5cm radius, 63,585 cm2 , 0,118521 L/m2
@@ -24,12 +21,10 @@ bool reedSwitchAtivado = false;
 unsigned long ultimoIntervalo = 0; 
 
 void loop() {
-  
   int valorDigital = digitalRead(PIN_PLUVIOMETRO); // Ele sempre será 1, e só será 0 quando o imã se aproximar no Reed Switch
   modificarContagem(valorDigital);
-  
-  if(millis() - ultimoIntervalo > INTERVALO_LEITURA){
-    float mediaContagemMin = contarMlPorMinuto();
+  if(millis() - ultimoIntervalo >= INTERVALO_LEITURA){
+    float mediaContagemMin = contarMlPorMinuto(); // para ser usado mais de uma vez
     pluviometroSerial(valorDigital, mediaContagemMin);
     contagemSec = 0;
     ultimoIntervalo = millis();
@@ -37,38 +32,33 @@ void loop() {
 }
 
 void modificarContagem(int valorDigital){
-  if (valorDigital == LOW && !reedSwitchAtivado) {
-    seguraContagem();
-  } else if (valorDigital == HIGH) {
-    reedSwitchAtivado = false;
-  }
+  if (valorDigital == LOW && !reedSwitchAtivado) seguraContagem();
+  else if (valorDigital == HIGH) reedSwitchAtivado = false;
 }
 
 void seguraContagem(){
   if(contagemGeral == ultimaContagemGeral){
       contagemGeral++;
       contagemSec++;
-    } else {
-      ultimaContagemGeral = contagemGeral;
-    }
+  } else {
+    ultimaContagemGeral = contagemGeral;
+  }
   reedSwitchAtivado = true;
 }
 
 float contarMlPorMinuto(){
+  float soma = 0;
+  float mediaTotal;
   listaDeContagemSec[indiceInsercao] = contagemSec; 
   indiceInsercao = (indiceInsercao + 1) % tamanhoLista;
-  float soma = 0;
-  for (int i = 0; i < tamanhoLista; i++) {
-    soma += listaDeContagemSec[i];
-  }
-  float mediaTotal = soma / tamanhoLista;
-  return mediaTotal;
+  for (int i = 0; i < tamanhoLista; i++) soma += listaDeContagemSec[i];
+  return mediaTotal = soma / tamanhoLista;
 }
 
-float medidaLporM2(){
-  float areaPluviometroM2 = ((RAIO_PLUVIOMETRO * 3.1415) / 10*10*10*10);
-  float medidaBasculaemM3 = MEDIDA_BASCULA/10*10*10*10;
-  float quantidadeDeAguaPorM2 = medidaBasculaemM3/areaPluviometroM2;  
+float medidaLporM2() {
+  float areaPluviometroM2 = (PI * RAIO_PLUVIOMETRO * RAIO_PLUVIOMETRO) / 10000.0; // convertendo cm² para m²
+  float medidaBasculaemM3 = MEDIDA_BASCULA * 1e-6; // transformando mL em m³
+  float quantidadeDeAguaPorM2 = medidaBasculaemM3 / areaPluviometroM2;
   return quantidadeDeAguaPorM2;
 }
 
